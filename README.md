@@ -1,0 +1,2 @@
+# flarummanagement
+Manage flarum installs
