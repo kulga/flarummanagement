@@ -1,6 +1,7 @@
-## Flarum Management (Basic)
+## Flarum Management
 
 Master Script
+
 https://raw.githubusercontent.com/kulga/flarummanagement/master/flarum_management
 
 In command line instructions. Should be run by **normal** user with *sudo* privileges
@@ -29,6 +30,7 @@ Additionally, the script has been split into functions, making it easier to supp
 Additional notes:
 
 * It uses php7.0
+* Some parts of ssl will take awhile on its first run
 
 Usage examples:
 
