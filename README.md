@@ -21,7 +21,7 @@ Some features
   * Supports a ip address or domain names
 * Configure flarum with ssl (or not)
   * You may only gain ssl certification with domain names
-* Decreased dependance of versions of operating system.
+* Decreased dependence of versions of operating system.
 * Ability to remove existing installs and perform cleanup of both ssl and the database
 * Ability to reconfigure a existing flarum install with ssl or to remove ssl.
 
