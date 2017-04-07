@@ -604,6 +604,9 @@ while getopts "a:b:f:hir:s" opt; do
             if [ "${install_os,,}" == 'ubuntu' ]
               then
                 initial_install_ubuntu
+            elif [ "${install_os,,}" == 'centos' ]
+              then
+                initial_install_centos
             fi
             ;;
         r)
