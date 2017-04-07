@@ -2,7 +2,7 @@
 set -e
 root_directory="/var/www/flarum/"
 unprivileged_php_user="php_flarum"
-webserver_user="www-data"
+
 install_os="ubuntu"
 
 help_message() {
@@ -38,12 +38,48 @@ if [ -z "${1+x}" ];
   fi
 
 
-  
-initial_install_ubuntu() {
+setup_users() {
+    # Adds needed users and assigns them to their groups
     sudo mkdir -p "$root_directory"
     sudo useradd "$unprivileged_php_user" --home-dir "$root_directory" --system --shell /bin/false || true
+    sudo useradd "$webserver_user" --system --shell /bin/false || true
     sudo gpasswd -a "$unprivileged_php_user" "$webserver_user"
     sudo gpasswd -a "$webserver_user" "$unprivileged_php_user" 
+}
+
+setup_php_config() {
+    ### Write php7-fpm pool config
+    ### Usage: setup_php_config /config/directory
+    echo writing php7-fpm config
+
+    sudo tee << EOF "$1" &> /dev/null
+[flarum]
+
+listen = /var/run/php7-fpm.\$pool.sock
+listen.allowed_clients = 127.0.0.1
+
+user = "$unprivileged_php_user"
+group = "$unprivileged_php_user"
+
+listen.owner = www-data
+listen.group = www-data
+
+pm = ondemand
+
+pm.max_children = 10
+pm.max_requests = 5000
+pm.process_idle_timeout = 180s
+
+chdir = /
+EOF
+}
+  
+initial_install_ubuntu() {
+
+    webserver_user="www-data"
+
+    # Sets up initial users and groups
+    setup_users
     
     # Update lists
     echo 'Updating...'
@@ -64,38 +100,16 @@ initial_install_ubuntu() {
         unzip \
         git
         
+    # Writes php config
+    setup_php_config '/etc/php/7.0/fpm/pool.d/flarum.conf'
 
-    ### Write php7-fpm pool config
-    echo writing php7-fpm config
-
-    sudo tee << EOF /etc/php/7.0/fpm/pool.d/flarum.conf &> /dev/null
-[flarum]
-
-listen = /var/run/php7-fpm.\$pool.sock
-listen.allowed_clients = 127.0.0.1
-
-user = "$unprivileged_php_user"
-group = "$unprivileged_php_user"
-
-listen.owner = www-data
-listen.group = www-data
-
-pm = ondemand
-
-pm.max_children = 10
-pm.max_requests = 5000
-pm.process_idle_timeout = 180s
-
-chdir = /
-EOF
-
-  # If default nginx config exists delete it
-  if [ -f /etc/nginx/sites-enabled/default ]
+    # If default nginx config exists delete it
+    if [ -f /etc/nginx/sites-enabled/default ]
       then
           sudo rm /etc/nginx/sites-enabled/default
-  fi
+    fi
 
-  sudo service php7.0-fpm stop; sudo service php7.0-fpm start
+    sudo service php7.0-fpm stop; sudo service php7.0-fpm start
 
 
 }
@@ -363,6 +377,8 @@ EOF
   
 }
 
+
+
 remove_site() {
   site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"
   site_install_directory="${root_directory}${site_url}"
@@ -402,10 +418,88 @@ remove_site() {
 
 }
 
-while getopts "f:hir:s" opt; do
+restore_site() {
+    site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"        
+    site_install_directory="${root_directory}${site_url}"
+    backup_location="${root_directory}backups/${site_url}"
+
+    database_name="$(echo flrm_"${site_url}" | cut -b1-13)$(echo "${site_url}" | md5sum | cut -d' ' -f1 | tr -d '0-9' | cut -b1-3)"
+    database_username="$(echo flrm_"${site_url}" | cut -b1-13)$(echo "${site_url}" | md5sum | cut -d' ' -f1 | tr -d '0-9' | cut -b1-3)"
+    if [ -z "${mysql_pass+x}" ];                                                
+    then                                                                      
+        read -sp 'Enter mysql root password ' mysql_pass                      
+    fi
+
+    most_recent_backup="$(find "$backup_location" -maxdepth 1 -type d -not -name "$(basename "$backup_location")" -printf "%T@ %p\n"| sort -nr | head -n1 | cut -d' ' -f 2)"
+    echo "Choosing ${most_recent_backup}"
+    sudo rsync --owner --group -a --delete "${most_recent_backup}/site_files/" "$site_install_directory"
+    mysqldump -u'root' -p"$mysql_pass" --add-drop-table --no-data "$database_name" | grep -e '^DROP \| FOREIGN_KEY_CHECKS' | mysql -u'root' -p"$mysql_pass" "$database_name"
+    mysql -uroot -p"$mysql_pass" "$database_name" < <(gzip -dc "${most_recent_backup}/"database.sql.gz)
+
+    (
+        cd  "$site_install_directory"
+        sudo php flarum cache:clear
+    )
+}
+
+backup_site() {
+    site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"        
+    site_install_directory="${root_directory}${site_url}"
+    backup_location="${root_directory}backups/${site_url}"
+
+    if [ ! -d "$backup_location" ]
+    then
+        echo 'Creating' "$backup_location"
+        sudo mkdir -p "${backup_location}"
+    fi
+
+
+    database_name="$(echo flrm_"${site_url}" | cut -b1-13)$(echo "${site_url}" | md5sum | cut -d' ' -f1 | tr -d '0-9' | cut -b1-3)"
+    database_username="$(echo flrm_"${site_url}" | cut -b1-13)$(echo "${site_url}" | md5sum | cut -d' ' -f1 | tr -d '0-9' | cut -b1-3)"
+    if [ -z "${mysql_pass+x}" ];
+      then
+          read -sp 'Enter mysql root password ' mysql_pass
+    fi
+
+    if [ -d "${backup_location}"/source ]
+    then
+        new_dir="$(date '+%F')"
+        count=1
+        while [ -d "${backup_location}/$new_dir" ]
+        do
+            # If new_dir exist, append and increment _n until no match
+            new_dir="${new_dir%_*}_${count}"
+            count="$((count + 1))"
+        done
+
+        sudo mkdir "${backup_location}/${new_dir}"
+        mysqldump -uroot -p"$mysql_pass" "$database_name" | gzip | sudo tee "${backup_location}/source/database".sql.gz 1> /dev/null
+        sudo cp -al "$site_install_directory" "${backup_location}/$new_dir/site_files"
+        sudo rsync --owner --group -a "${backup_location}/source/" "${backup_location}/$new_dir"
+        sudo touch "${backup_location}/${new_dir}"
+    else
+        sudo mkdir "${backup_location}"/source
+        mysqldump -uroot -p"$mysql_pass" "$database_name" | gzip | sudo tee "${backup_location}/source/database".sql.gz 1> /dev/null
+        sudo cp -al "$site_install_directory" "${backup_location}/source/site_files"
+    fi
+
+    sudo find "$backup_location" -maxdepth 1 -type d -mtime +14 -daystart -delete
+    
+
+}
+
+while getopts "a:b:f:hir:s" opt; do
     case "$opt" in
+        a)
+            # Restore most recent backup
+            restore_site "$OPTARG"
+            ;;
+        b)
+            # Backup site to root_directory/backups
+            backup_site "$OPTARG"
+            ;;
         f)
-            # Install Flarum with arguement of sitename eg helloworld.domain.org
+            # Install Flarum with argument of sitename eg helloworld.domain.org
             install_flarum "$OPTARG"
             ;;
         h)
@@ -416,9 +510,6 @@ while getopts "f:hir:s" opt; do
             if [ "${install_os,,}" == 'ubuntu' ]
               then
                 initial_install_ubuntu
-            # elif [ "${install_os,,}" == 'debian' ]
-            #   then
-            #     initial_install_debian
             fi
             ;;
         r)
