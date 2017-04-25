@@ -595,7 +595,8 @@ while getopts "a:b:f:hir:s" opt; do
     case "$opt" in
         a)
             # Restore most recent backup
-            restore_site "$OPTARG"
+            # restore_site "$OPTARG"
+            echo 'Disabled for now :)'
             ;;
         b)
             # Backup site to root_directory/backups
@@ -619,7 +620,8 @@ while getopts "a:b:f:hir:s" opt; do
             fi
             ;;
         r)
-            remove_site "$OPTARG"
+            # remove_site "$OPTARG"
+            echo 'Disabled for now :)'
             ;;
         s)
             # Configure with SSL
