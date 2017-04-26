@@ -604,7 +604,8 @@ while getopts "a:b:f:hir:s" opt; do
             ;;
         b)
             # Backup site to root_directory/backups
-            backup_site "$OPTARG"
+            # backup_site "$OPTARG"
+            echo 'Disabled for now :)'
             ;;
         f)
             # Install Flarum with argument of sitename eg helloworld.domain.org
@@ -624,8 +625,7 @@ while getopts "a:b:f:hir:s" opt; do
             fi
             ;;
         r)
-            # remove_site "$OPTARG"
-            echo 'Disabled for now :)'
+            remove_site "$OPTARG"
             ;;
         s)
             # Configure with SSL
