@@ -275,13 +275,17 @@ EOF
 install_flarum() {
   site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"
   site_install_directory="${root_directory}${site_url}"
+
   
   
   # Only do config if directory already exists
   if [ -d "$site_install_directory" ]
     then
-        echo "$site_install_directory already exists. Will only alter configuration"
-        existing_install=TRUE
+      echo "$site_install_directory already exists. Will only alter configuration"
+      existing_install=TRUE
+    else
+      echo "Installing $site_url to $site_install_directory"
+      sleep 3
   fi
   
       # Install composer
