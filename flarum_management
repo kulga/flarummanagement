@@ -284,7 +284,7 @@ install_flarum() {
       echo "$site_install_directory already exists. Will only alter configuration"
       existing_install=TRUE
     else
-      echo "Installing $site_url to $site_install_directory"
+      echo -e "\n\nInstalling $site_url to $site_install_directory\n"
       sleep 3
   fi
   
