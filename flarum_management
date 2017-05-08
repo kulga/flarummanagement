@@ -570,20 +570,22 @@ backup_site() {
             count="$((count + 1))"
         done
 
+        # Sync changes and dump database to source backup
         sudo rsync --delete --owner --group -a "$site_install_directory"/ "${backup_location}/source/site_files"
         mysqldump -uroot -p"$mysql_pass" "$database_name" | gzip | sudo tee "${backup_location}/source/database".sql.gz 1> /dev/null
         sudo mkdir "${backup_location}/${new_dir}"
         
+        # Increment backup number if done more then once per day
         if [ "$count" -gt 1 ]
         then
             old_dir="${new_dir%_*}_$((count - 1 ))"
-            sudo rsync -a --delete --link-dest="${backup_location}"/"${old_dir}" "${backup_location}"/source/ "$backup_location"/"$new_dir"
+        else
+            old_dir="source"
         fi
 
-        # sudo rsync --delete --owner --group -a "$site_install_directory"/ "${backup_location}/source/site_files"
-        # mysqldump -uroot -p"$mysql_pass" "$database_name" | gzip | sudo tee "${backup_location}/source/database".sql.gz 1> /dev/null
-        # sudo rsync --link --delete --owner --group -a "${backup_location}/source/" "${backup_location}/$new_dir"
-        # sudo touch "${backup_location}/${new_dir}"
+        # Sync the old backup with the new one, using the source to hardlink only changes
+        sudo rsync -a --delete --link-dest="${backup_location}"/source "${backup_location}"/"${old_dir}"/ "$backup_location"/"$new_dir"
+
     else
         sudo mkdir "${backup_location}"/source
         mysqldump -uroot -p"$mysql_pass" "$database_name" | gzip | sudo tee "${backup_location}/source/database".sql.gz 1> /dev/null
@@ -599,13 +601,11 @@ while getopts "a:b:f:hir:s" opt; do
     case "$opt" in
         a)
             # Restore most recent backup
-            # restore_site "$OPTARG"
-            echo 'Disabled for now :)'
+            restore_site "$OPTARG"
             ;;
         b)
             # Backup site to root_directory/backups
-            # backup_site "$OPTARG"
-            echo 'Disabled for now :)'
+            backup_site "$OPTARG"
             ;;
         f)
             # Install Flarum with argument of sitename eg helloworld.domain.org
