@@ -370,6 +370,8 @@ EOF
 
 
     echo "#############################"
+    echo "Site directory created at"
+    echo "$site_install_directory"
     echo ""
     echo "Database Credentials Generated!"
     echo "Copy the below credentials to your website at"
@@ -439,13 +441,15 @@ restore_site() {
 
     database_name="$(echo flrm_"${site_url}" | cut -b1-13)$(echo "${site_url}" | md5sum | cut -d' ' -f1 | tr -d '0-9' | cut -b1-3)"
     database_username="$(echo flrm_"${site_url}" | cut -b1-13)$(echo "${site_url}" | md5sum | cut -d' ' -f1 | tr -d '0-9' | cut -b1-3)"
+
+    most_recent_backup="$(find "$backup_location" -maxdepth 1 -type d -not -name "$(basename "$backup_location")" -printf "%T@ %p\n"| sort -nr | head -n1 | cut -d' ' -f 2)"
+    echo "Choosing ${most_recent_backup}"
+
     if [ -z "${mysql_pass+x}" ];                                                
     then                                                                      
         read -sp 'Enter mysql root password ' mysql_pass                      
     fi
 
-    most_recent_backup="$(find "$backup_location" -maxdepth 1 -type d -not -name "$(basename "$backup_location")" -printf "%T@ %p\n"| sort -nr | head -n1 | cut -d' ' -f 2)"
-    echo "Choosing ${most_recent_backup}"
     sudo rsync --owner --group -a --delete "${most_recent_backup}/site_files/" "$site_install_directory"
     mysqldump -u'root' -p"$mysql_pass" --add-drop-table --no-data "$database_name" | grep -e '^DROP \| FOREIGN_KEY_CHECKS' | mysql -u'root' -p"$mysql_pass" "$database_name"
     mysql -uroot -p"$mysql_pass" "$database_name" < <(gzip -dc "${most_recent_backup}/"database.sql.gz)
