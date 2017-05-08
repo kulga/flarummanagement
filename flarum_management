@@ -482,13 +482,14 @@ backup_site() {
         while [ -d "${backup_location}/$new_dir" ]
         do
             # If new_dir exist, append and increment _n until no match
-            new_dir="${new_dir%_*}_${count}"
             count="$((count + 1))"
+            new_dir="${new_dir%_*}_${count}"
         done
 
         # Sync changes and dump database to source backup
         sudo rsync --delete --owner --group -a "$site_install_directory"/ "${backup_location}/source/site_files"
         mysqldump -uroot -p"$mysql_pass" "$database_name" | gzip | sudo tee "${backup_location}/source/database".sql.gz 1> /dev/null
+        echo Creating "${backup_location}/${new_dir}"
         sudo mkdir "${backup_location}/${new_dir}"
         
         # Increment backup number if done more then once per day
