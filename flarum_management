@@ -124,89 +124,6 @@ initial_install_ubuntu() {
 
 }
 
-initial_install_centos() {
-
-    webserver_user="nginx"
-    # Sets up initial users and groups
-    setup_users
-    
-    # Update lists
-    echo 'Updating...'
-    sudo yum makecache fast
-    sudo yum install epel-release
-
-    # Add php repo
-    sudo rpm -Uvh http://rpms.remirepo.net/enterprise/remi-release-7.rpm || true
-    sudo yum -y install yum-utils
-    sudo yum update
-
-    sudo yum install \
-        nginx \
-        mariadb \
-        mariadb-server \
-        php70-php-curl \
-        php70-php-gd \
-        php70-php-cli \
-        php70-php-mysql \
-        php70-php-mbstring \
-        php70-php-dom \
-        php70-php-fpm \
-        pwgen \
-        zip \
-        unzip \
-        git
-
-    # Initial configure of mariadb
-    echo 'Configure mysql root user?'
-    read -p'Y/N ' answer
-    if [ "${answer,,}" == 'y' ]
-        then
-            /usr/bin/mysql_secure_installation
-    fi
-
-    if [ ! -e /usr/bin/php ]
-        then
-            echo "linking php70 from $(whereis php70 | cut -d' ' -f2)\ 
-                to /usr/bin/php"
-            sudo ln -s "$(whereis php70 | cut -d' ' -f2)" /usr/bin/php
-    fi
-        
-    setup_php_config '/etc/opt/remi/php70/php-fpm.d/flarum.conf'
-
-    # Configure nginx for sites-available / sites-enabled
-    sudo mkdir -p /etc/nginx/sites-{available,enabled}
-    sudo chown root:root /etc/nginx/sites-{available,enabled}
-
-    # Make sure nginx includes site-enabled conf files
-    if ! grep -q sites-enabled /etc/nginx/nginx.conf
-        then
-            sudo sed '\:include /etc/nginx/conf.d/\*.conf;:a \ \ \ \ include /etc/nginx/sites-enabled/\*.conf;' \
-                /etc/nginx/nginx.conf | \
-                sudo tee /etc/nginx/nginx2.conf 1> /dev/null
-            sudo mv /etc/nginx/nginx2.conf /etc/nginx/nginx.conf 
-            sudo nginx -t && sudo service nginx reload
-    fi
-
-    # If default nginx config exists delete it
-    if [ -f /etc/nginx/sites-enabled/default ]
-        then
-            sudo rm /etc/nginx/sites-enabled/default
-    fi
-
-    sudo systemctl stop php70-php-fpm.service
-    sudo systemctl enable php70-php-fpm.service
-    sudo systemctl start php70-php-fpm.service
-
-    sudo systemctl stop nginx.service
-    sudo systemctl enable nginx.service
-    sudo systemctl start nginx.service
-
-    sudo systemctl stop mariadb.service
-    sudo systemctl enable mariadb.service
-    sudo systemctl start mariadb.service
-
-
-}
 
 ssl_install() {
   
@@ -624,9 +541,6 @@ while getopts "a:b:f:hir:s" opt; do
             if [ "${install_os,,}" == 'ubuntu' ]
               then
                 initial_install_ubuntu
-            elif [ "${install_os,,}" == 'centos' ]
-              then
-                initial_install_centos
             fi
             ;;
         r)
