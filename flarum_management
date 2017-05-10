@@ -436,21 +436,20 @@ remove_site() {
 }
 
 update_flarum() {
-    site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"        
+    site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"
     site_install_directory="${root_directory}${site_url}"
 
-    if [ ! -f "$1"composer.json ]
-    then 
-        echo "No composer.json at $1"
-    else 
-        ( 
-            cd "$1" && \
+    if [ ! -f "$site_install_directory"/composer.json ]
+    then
+        echo "No composer.json at "$site_install_directory"/composer.json"
+    else
+        (
+            cd "$site_install_directory" && \
             composer update "$(
-            python -c " \
-            import sys, json; \
+            python3 -c "import sys, json; \
             [ print(key, end=' ') for key, value in json.load(sys.stdin)['require'].items()]" \
             < composer.json)" && \
-            php flarum cache:clear 
+            php flarum cache:clear
         )
     fi
 }
