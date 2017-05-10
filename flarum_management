@@ -435,6 +435,27 @@ remove_site() {
 
 }
 
+update_flarum() {
+    site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"        
+    site_install_directory="${root_directory}${site_url}"
+
+    if [ ! -f "$1"composer.json ]
+    then 
+        echo "No composer.json at $1"
+    else 
+        ( 
+            cd "$1" && \
+            composer update "$(
+            python -c " \
+            import sys, json; \
+            [ print(key, end=' ') for key, value in json.load(sys.stdin)['require'].items()]" \
+            < composer.json)" && \
+            php flarum cache:clear 
+        )
+    fi
+}
+    
+
 restore_site() {
     site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"        
     site_install_directory="${root_directory}${site_url}"
@@ -519,7 +540,7 @@ backup_site() {
 
 }
 
-while getopts "a:b:f:hir:s" opt; do
+while getopts "a:b:f:hir:su:" opt; do
     case "$opt" in
         a)
             # Restore most recent backup
@@ -549,6 +570,10 @@ while getopts "a:b:f:hir:s" opt; do
         s)
             # Configure with SSL
             modify_ssl=TRUE
+            ;;
+        u)
+            # Update site
+            update_flarum "$OPTARG"
             ;;
     esac
 done
