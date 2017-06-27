@@ -84,7 +84,7 @@ chdir = /
 EOF
 }
   
-initial_install_ubuntu() {
+initial_install_nginx_ubuntu() {
 
     webserver_user="www-data"
 
@@ -125,7 +125,7 @@ initial_install_ubuntu() {
 }
 
 
-ssl_install() {
+ssl_nginx_install() {
   
   if [ ! -f /opt/certbot-auto ]
       then
@@ -189,7 +189,7 @@ EOF
   fi
 }
 
-install_flarum() {
+install_nginx_flarum() {
   site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"
   site_install_directory="${root_directory}${site_url}"
 
@@ -396,7 +396,7 @@ EOF
 
 
 
-remove_site() {
+remove_nginx_site() {
   site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"
   site_install_directory="${root_directory}${site_url}"
 
