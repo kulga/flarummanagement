@@ -98,20 +98,20 @@ initial_install_nginx_ubuntu() {
         nginx-full \
         mysql-server \
         mysql-client \
-        php7.0-curl \
-        php7.0-gd \
-        php7.0-cli \
-        php7.0-mysql \
-        php7.0-mbstring \
-        php7.0-dom \
-        php7.0-fpm \
+        php7.1-curl \
+        php7.1-gd \
+        php7.1-cli \
+        php7.1-mysql \
+        php7.1-mbstring \
+        php7.1-dom \
+        php7.1-fpm \
         pwgen \
         zip \
         unzip \
         git
         
     # Writes php config
-    setup_php_config '/etc/php/7.0/fpm/pool.d/flarum.conf'
+    setup_php_config '/etc/php/7.1/fpm/pool.d/flarum.conf'
 
     # If default nginx config exists delete it
     if [ -f /etc/nginx/sites-enabled/default ]
@@ -119,7 +119,7 @@ initial_install_nginx_ubuntu() {
           sudo rm /etc/nginx/sites-enabled/default
     fi
 
-    sudo service php7.0-fpm stop; sudo service php7.0-fpm start
+    sudo service php7.1-fpm stop; sudo service php7.1-fpm start
 
 
 }
