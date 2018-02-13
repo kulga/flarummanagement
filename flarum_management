@@ -551,7 +551,7 @@ while getopts "a:b:f:hir:su:" opt; do
             ;;
         f)
             # Install Flarum with argument of sitename eg helloworld.domain.org
-            install_flarum "$OPTARG"
+            install_nginx_flarum "$OPTARG"
             ;;
         h)
             help_message
