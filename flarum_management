@@ -270,7 +270,7 @@ install_nginx_flarum() {
 
   if [ "$modify_ssl" == TRUE ]
     then
-        ssl_install
+        ssl_nginx_install
   fi
   
   # Installing nginx config
@@ -604,12 +604,13 @@ while getopts "a:b:f:hir:su:" opt; do
             fi
             ;;
         r)
+        
             echo "WARNING - THIS WILL REMOVE THE SITE $OPTARG"
             echo "Are you SURE you want to continue?"
             read -p'Y/N ' kill_site
-            if [ "${kill_site,,} == 'y' || "${kill_site,,} == 'yes' ];
+            if [ "${kill_site,,}" == 'y' ] || [ "${kill_site,,}" == 'yes' ];
             then
-                remove_site "$OPTARG"
+                remove_nginx_site "$OPTARG"
             else
                 echo "Not removing $OPTARG"
             fi
