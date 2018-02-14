@@ -560,7 +560,7 @@ while getopts "a:b:f:hir:su:" opt; do
             # initial_install
             if [ "${install_os,,}" == 'ubuntu' ]
               then
-                initial_install_ubuntu
+                initial_install_nginx_ubuntu
             fi
             ;;
         r)
