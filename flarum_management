@@ -84,7 +84,7 @@ chdir = /
 EOF
 }
   
-initial_install_nginx_ubuntu() {
+initial_install_nginx_ubuntu-17.10() {
 
     webserver_user="www-data"
 
@@ -120,6 +120,46 @@ initial_install_nginx_ubuntu() {
     fi
 
     sudo service php7.1-fpm stop; sudo service php7.1-fpm start
+
+
+}
+
+initial_install_nginx_ubuntu-16.04() {
+
+    webserver_user="www-data"
+
+    # Sets up initial users and groups
+    setup_users
+    
+    # Update lists
+    echo 'Updating...'
+    sudo apt-get update
+    sudo apt-get install \
+        nginx-full \
+        mysql-server \
+        mysql-client \
+        php7.0-curl \
+        php7.0-gd \
+        php7.0-cli \
+        php7.0-mysql \
+        php7.0-mbstring \
+        php7.0-dom \
+        php7.0-fpm \
+        pwgen \
+        zip \
+        unzip \
+        git
+        
+    # Writes php config
+    setup_php_config '/etc/php/7.0/fpm/pool.d/flarum.conf'
+
+    # If default nginx config exists delete it
+    if [ -f /etc/nginx/sites-enabled/default ]
+      then
+          sudo rm /etc/nginx/sites-enabled/default
+    fi
+
+    sudo service php7.0-fpm stop; sudo service php7.0-fpm start
 
 
 }
@@ -456,7 +496,7 @@ update_flarum() {
     
 
 restore_site() {
-    site_url="$( echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"        
+    site_url="$(echo "$1" | grep -iIohE '[^[:space:]]+' | cut -d'/' -f3)"        
     site_install_directory="${root_directory}${site_url}"
     backup_location="${root_directory}backups/${site_url}"
 
@@ -559,8 +599,8 @@ while getopts "a:b:f:hir:su:" opt; do
         i)
             # initial_install
             if [ "${install_os,,}" == 'ubuntu' ]
-              then
-                initial_install_nginx_ubuntu
+            then
+                initial_install_nginx_ubuntu-"$(lsb_release -r | grep -oE '[0-9]{1,2}\.[0-9]{1,2}')"
             fi
             ;;
         r)
