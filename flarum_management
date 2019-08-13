@@ -343,8 +343,8 @@ install_nginx_flarum() {
   
       # Change group and permissions
       chmod 775 "$site_install_directory"
-      chmod -R 775 "$site_install_directory/assets" "$site_install_directory/storage"
-      sudo chgrp -R "$unprivileged_php_user" "$site_install_directory/assets" "$site_install_directory/storage"
+      chmod -R 775 "$site_install_directory/public/assets" "$site_install_directory/storage"
+      sudo chgrp -R "$unprivileged_php_user" "$site_install_directory/public/assets" "$site_install_directory/storage"
 
   fi
 
