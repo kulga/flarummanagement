@@ -119,7 +119,7 @@ initial_install_nginx_ubuntu-19.04() {
           sudo rm /etc/nginx/sites-enabled/default
     fi
 
-    sudo service php7.2-fpm stop; sudo service php7.1-fpm start
+    sudo service php7.2-fpm stop; sudo service php7.2-fpm start
 }
 
 
